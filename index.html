@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+
+    <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+
+</head>
+<body>
+
+<h1>Color Picker IoT</h1>
+<input id="username" name="username" value="" type="text" /><br />
+<input id="password" name="password" value="" type="password" /><br />
+<button id="login" type="button">Login</button><br />
+<br />
+
+<div id="colorDiv" style="display: none;">
+    <input type="color" id="colorwheel" name="colorwheel" value="#FFFFFF" />
+    <button id="pushColor" name="pushColor" type="button">Color</button><br /><br />
+
+    <button id="devicesButton" type="button">devicesButton</button>
+</div>
+
+<script type="text/javascript" src="//cdn.jsdelivr.net/particle-api-js/5/particle.min.js"></script>
+<script type="text/javascript">
+    const particle = new Particle();
+    var token;
+    const login = document.getElementById('login');
+    const colorBtn = document.getElementById('pushColor');
+    const devicesBtn = document.getElementById('devicesButton');
+    const colorwheel = document.getElementById('colorwheel');
+
+    //colorwheel.addEventListener("change", watchColorPicker, false);
+
+    login.onclick = buttonClicked;
+    colorBtn.onclick = getRGBValueFromInput;
+    devicesBtn.onclick = getRegisteredDevices;
+
+    function buttonClicked() {
+        let username = document.getElementById('username');
+        let password = document.getElementById('password');
+        particle.login({
+                username: username.value, 
+                password: password.value 
+            }).then(
+                function(data) {
+                    token = data.body.access_token;
+                    document.getElementById('colorDiv').style.display = 'block';
+                },
+                function (err) {
+                    console.log('Could not log in.', err);
+                });
+    }
+
+    function getRegisteredDevices() {
+        const devicesPr = particle.listDevices({ auth: token });
+
+        devicesPr.then(
+                function(devices){
+                    console.log('Devices: ', devices.body);
+                },
+                function(err) {
+                    console.log('List devices call failed: ', err);
+                }
+            );
+    }
+
+    function getRGBValueFromInput() {
+        const h = colorwheel.value;
+        const redV = parseInt((cutHex(h)).substring(0,2),16);
+        const greenV = parseInt((cutHex(h)).substring(2,4),16);
+        const blueV = parseInt((cutHex(h)).substring(4,6),16);
+        const colors = [redV, greenV, blueV];
+        console.log(colors);
+        const publishEventPr = particle.publishEvent({ name: 'pushcolor', data: colors, isPrivate: true, auth: token });
+
+        publishEventPr.then(
+            function(data) {
+                if (data.body.ok) { console.log("Event published succesfully") }
+            },
+            function(err) {
+                console.log("Failed to publish event: " + err)
+            }
+        );
+    }
+
+    function cutHex(h) {
+        console.log(h.substring(1,7));
+        return (h.charAt(0)=="#") ? h.substring(1,7):h;
+    }
+
+</script>
+</body>
+</html>
