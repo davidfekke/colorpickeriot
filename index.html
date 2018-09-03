@@ -6,9 +6,6 @@
     <title></title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width">
-
-    <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
-
 </head>
 <body>
 
@@ -19,9 +16,7 @@
 <br />
 
 <div id="colorDiv" style="display: none;">
-    <input type="color" id="colorwheel" name="colorwheel" value="#FFFFFF" />
-    <button id="pushColor" name="pushColor" type="button">Color</button><br /><br />
-
+    <input type="color" id="colorwheel" name="colorwheel" value="#FFFFFF" /><br /><br /> 
     <button id="devicesButton" type="button">devicesButton</button>
 </div>
 
@@ -29,16 +24,24 @@
 <script type="text/javascript">
     const particle = new Particle();
     var token;
+    var timerId;
+    var lastUpdated;
+    var colorHex = '#000000';
     const login = document.getElementById('login');
-    const colorBtn = document.getElementById('pushColor');
     const devicesBtn = document.getElementById('devicesButton');
     const colorwheel = document.getElementById('colorwheel');
 
-    //colorwheel.addEventListener("change", watchColorPicker, false);
-
+    colorwheel.addEventListener('change', watchColorPicker, false);
     login.onclick = buttonClicked;
-    colorBtn.onclick = getRGBValueFromInput;
     devicesBtn.onclick = getRegisteredDevices;
+
+    function watchColorPicker(event) {
+        lastUpdated = Date.now();
+        colorHex = event.target.value;
+        if (!timerId) {
+		    timerId = setInterval(particleServiceTimer, 1000);	  
+	    }
+    }
 
     function buttonClicked() {
         let username = document.getElementById('username');
@@ -69,14 +72,23 @@
             );
     }
 
-    function getRGBValueFromInput() {
-        const h = colorwheel.value;
+    function cutHex(h) {
+        console.log(h.substring(1,7));
+        return (h.charAt(0)=="#") ? h.substring(1,7):h;
+    }
+
+    function getColorsArray() {
+        const h = colorHex;
         const redV = parseInt((cutHex(h)).substring(0,2),16);
         const greenV = parseInt((cutHex(h)).substring(2,4),16);
         const blueV = parseInt((cutHex(h)).substring(4,6),16);
-        const colors = [redV, greenV, blueV];
-        console.log(colors);
-        const publishEventPr = particle.publishEvent({ name: 'pushcolor', data: colors, isPrivate: true, auth: token });
+        return [redV, greenV, blueV];
+    }
+
+    function particleServiceTimer() {
+        console.log('Sending to Particle service.');
+        const timerColors = getColorsArray();
+        const publishEventPr = particle.publishEvent({ name: 'pushcolor', data: timerColors, isPrivate: true, auth: token });
 
         publishEventPr.then(
             function(data) {
@@ -86,11 +98,11 @@
                 console.log("Failed to publish event: " + err)
             }
         );
-    }
 
-    function cutHex(h) {
-        console.log(h.substring(1,7));
-        return (h.charAt(0)=="#") ? h.substring(1,7):h;
+        if (Date.now() - lastUpdated > 5000) {
+            clearInterval(timerId);
+            timerId = null;
+        }
     }
 
 </script>

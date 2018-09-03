@@ -1,8 +1,6 @@
 // This #include statement was automatically added by the Particle IDE.
 #include <InternetButton.h>
 
-//#include "InternetButton/InternetButton.h"
-
 InternetButton b = InternetButton();
 
 int red, green, blue;
@@ -28,7 +26,7 @@ void myHandler(const char *event, const char *data)
     red = intArray[0];
     green = intArray[1];
     blue = intArray[2];
-  //b.allLedsOn(red,green,blue);
+    b.allLedsOn(red, green, blue);
 }
 
 void setup() {
@@ -40,6 +38,5 @@ void setup() {
 }
 
 void loop() {
-    b.allLedsOn(red,green,blue);
-    delay(1000);
+
 }
